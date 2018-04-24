@@ -23,6 +23,19 @@
  * 1016000 hashes in 0.26s (3960056.52 hashes/sec)
  */
 
+
+// 1. Program starts, block data is provided by the user: Hello CS 220!!!
+// 2. Each thread receives a task to work on.
+//      A task is simply an array of nonces.
+// 3. Each thread begins appending each nonce in the task array to the block data and then hashing the resulting string.
+//      For example, the first combination will be Hello CS 220!!!0, followed by Hello CS 220!!!1, and so on.
+//      Once a thread finds a hash that begins with the correct amount of zeros (specified by the difficulty mask), the process is complete.
+// 4. Once a thread finds a hash that begins with the correct amount of zeros (specified by the difficulty mask), the process is complete.
+
+// main thread should be producing tasks while the worker threads performs the hash inversions
+// If the user specifies 4 for the thread count, this means you’ll have five total threads (main thread + 4 workers)
+
+
 #include <limits.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -62,9 +75,8 @@ void *mine(void *arg);
 void print_binary32(uint32_t num);
 /** ------------------- */
 
-/* Function: get_time()
- *
- * Purpose: retrieves the current system time (in seconds).
+/*
+ * retrieves the current system time (in seconds).
  */
 double get_time() {
     struct timeval tv;
@@ -72,11 +84,21 @@ double get_time() {
     return tv.tv_sec + tv.tv_usec / 1000000.0;
 }
 
+// TODO: Return the right number of bits based off int
+uint32_t get_difficulty(int arg){
+
+  uint32_t diff = 0xFFFFFFFF;
+
+  return diff;
+}
+
 /* TODO documentation */
 void print_binary32(uint32_t num) {
     int i;
     for (i = 31; i >= 0; --i) {
+      // 1 left shift i times
         uint32_t position = 1 << i;
+        // if num AND position is equal (by bits) to position, print 1. Else, print 0
         printf("%c", ((num & position) == position) ? '1' : '0');
     }
 }
@@ -162,7 +184,17 @@ int main(int argc, char *argv[]) {
     // TODO we have hard coded the difficulty to 20 bits (0x0000FFF). This is a
     // fairly quick computation -- something like 28 will take much longer.  You
     // should allow the user to specify anywhere between 1 and 32 bits of zeros.
-    difficulty_mask = 0x000000FF;
+
+    printf("Difficulty: %d\n", atoi(argv[2]));
+
+    // difficulty = get_difficulty(atoi(argv[2]));
+
+    // 20 bit
+    //difficulty_mask = 0x000000FF;
+
+    // 32 bit
+    difficulty_mask = 0xFFFFFFFF;
+
     printf("Difficulty Mask: ");
     print_binary32(difficulty_mask);
     printf("\n");
@@ -171,8 +203,12 @@ int main(int argc, char *argv[]) {
      * complete bitcoin miner implementation, the block data would be composed
      * of bitcoin transactions. */
     bitcoin_block_data = argv[3];
-    // TODO we should probably check to make sure the user entered a valid
-    // (non-empty) string...
+
+    // Check to make sure the user entered a valid (non-empty) string
+    if(strcmp(bitcoin_block_data, "") == 0){
+      printf("ERROR: The string passed as the block data is empty.\n");
+      return 1; //Exit with error code
+    }
 
     // TODO we have hard-coded the number of threads here because the
     // single-threaded version of the program can only run with one worker
