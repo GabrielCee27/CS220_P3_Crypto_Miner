@@ -12,7 +12,7 @@
  *           When your code is ready for performance testing, you can add the
  *           -O3 flag to enable all compiler optimizations.
  *
- * Run:      ./mine 4 24 'Hello CS 220!!!'
+ // * Run:      ./mine 4 24 'Hello CS 220!!!'
  *
  * Difficulty Mask: 00000000000000000000000011111111
  * Number of threads: 4
@@ -61,7 +61,9 @@ char *bitcoin_block_data;
 uint64_t *task_pointer = NULL;
 bool solution_found = false;
 
+// used to allow us to associate more attributes per thread
 struct thread_info {
+    // actual thread
     pthread_t thread_handle;
     unsigned int thread_id;
     uint64_t num_inversions;
@@ -85,6 +87,8 @@ double get_time() {
 }
 
 // TODO: Return the right number of bits based off int
+// Hint: Look at print_binary32 Function
+// can use OR to set difficulty
 uint32_t get_difficulty(int arg){
 
   uint32_t diff = 0xFFFFFFFF;
@@ -93,6 +97,7 @@ uint32_t get_difficulty(int arg){
 }
 
 /* TODO documentation */
+// prints a 32 bit number in binary
 void print_binary32(uint32_t num) {
     int i;
     for (i = 31; i >= 0; --i) {
@@ -174,6 +179,13 @@ void *mine(void *arg) {
     return NULL;
 }
 
+void print_out_thread_info(struct thread_info **threads, int num_threads){
+  int i;
+  for(i = 0; i < num_threads; i++){
+    printf("thread id: %d\n", threads[i]->thread_id);
+  }
+}
+
 int main(int argc, char *argv[]) {
 
     if (argc != 4) {
@@ -190,10 +202,9 @@ int main(int argc, char *argv[]) {
     // difficulty = get_difficulty(atoi(argv[2]));
 
     // 20 bit
-    //difficulty_mask = 0x000000FF;
-
+    difficulty_mask = 0x000000FF;
     // 32 bit
-    difficulty_mask = 0xFFFFFFFF;
+    // difficulty_mask = 0xFFFFFFFF;
 
     printf("Difficulty Mask: ");
     print_binary32(difficulty_mask);
@@ -216,8 +227,34 @@ int main(int argc, char *argv[]) {
     // the user and store them in an array. The thread_info struct contains a
     // pthread_t handle that we will use later to join the threads. Each struct
     // is passed in as the thread routine's argument.
+
     unsigned int num_threads = 1;
+    if(atoi(argv[1]) < 1){
+      printf("ERROR: Invalid number of threads, defaulting to 5\n");
+      num_threads = 5; //TODO: Move to initial value when implemented multithreading
+    }
+    else{
+      num_threads = atoi(argv[1]);
+    }
     printf("Number of threads: %d\n", num_threads);
+
+    //TODO: create the number of threads specified and store them in an array.
+
+    // thread of pointers to the type thread_info
+    struct thread_info *threads[num_threads];
+    int i;
+    for(i = 0; i < num_threads; i++){
+      threads[i] = calloc(1, sizeof(struct thread_info));
+      threads[i]->thread_id = i;
+      pthread_create(&(threads[i]->thread_handle), NULL, mine, threads[i]);
+    }
+
+    // check if threads were made correctly
+    //print_out_thread_info(threads, num_threads);
+
+
+    return 0;
+
     struct thread_info *thread = calloc(1, sizeof(struct thread_info));
     thread->thread_id = 0;
     pthread_create(&thread->thread_handle, NULL, mine, thread);
