@@ -56,7 +56,7 @@ pthread_mutex_t task_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t task_staging = PTHREAD_COND_INITIALIZER;
 pthread_cond_t task_ready = PTHREAD_COND_INITIALIZER;
 
-uint32_t difficulty_mask;
+uint32_t difficulty_mask; //unsigned int 32 bits type
 char *bitcoin_block_data;
 uint64_t *task_pointer = NULL;
 bool solution_found = false;
@@ -75,6 +75,7 @@ struct thread_info {
 double get_time();
 void *mine(void *arg);
 void print_binary32(uint32_t num);
+void print_results(struct thread_info **threads, int num_threads, double total_time);
 /** ------------------- */
 
 /*
@@ -84,16 +85,6 @@ double get_time() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return tv.tv_sec + tv.tv_usec / 1000000.0;
-}
-
-// TODO: Return the right number of bits based off int
-// Hint: Look at print_binary32 Function
-// can use OR to set difficulty
-uint32_t get_difficulty(int arg){
-
-  uint32_t diff = 0xFFFFFFFF;
-
-  return diff;
 }
 
 /* TODO documentation */
@@ -106,6 +97,21 @@ void print_binary32(uint32_t num) {
         // if num AND position is equal (by bits) to position, print 1. Else, print 0
         printf("%c", ((num & position) == position) ? '1' : '0');
     }
+}
+
+// TODO: Return the right number of bits based off int
+// Hint: Look at print_binary32 Function
+// can use OR to set difficulty
+uint32_t get_difficulty(int diff){
+  uint32_t mask = 0;
+
+  int i;
+  for(i = 0; i < 32 - diff; i++){
+    uint32_t position = 1 << i;
+    mask = mask | position;
+  }
+
+  return mask;
 }
 
 /* TODO documentation */
@@ -179,13 +185,6 @@ void *mine(void *arg) {
     return NULL;
 }
 
-void print_out_thread_info(struct thread_info **threads, int num_threads){
-  int i;
-  for(i = 0; i < num_threads; i++){
-    printf("thread id: %d\n", threads[i]->thread_id);
-  }
-}
-
 void print_results(struct thread_info **threads, int num_threads, double total_time){
   uint64_t total_inversions = 0;
 
@@ -217,14 +216,7 @@ int main(int argc, char *argv[]) {
     // fairly quick computation -- something like 28 will take much longer.  You
     // should allow the user to specify anywhere between 1 and 32 bits of zeros.
 
-    printf("Difficulty: %d\n", atoi(argv[2]));
-
-    // difficulty = get_difficulty(atoi(argv[2]));
-
-    // 20 bit
-    difficulty_mask = 0x000000FF;
-    // 32 bit
-    // difficulty_mask = 0xFFFFFFFF;
+    difficulty_mask = get_difficulty(atoi(argv[2]));
 
     printf("Difficulty Mask: ");
     print_binary32(difficulty_mask);
@@ -261,7 +253,7 @@ int main(int argc, char *argv[]) {
     // }
     printf("Number of threads: %d\n", num_threads);
 
-    //** Array of thread pointers */
+    /* Array of thread pointers */
     struct thread_info *threads[num_threads];
     int i;
     for(i = 0; i < num_threads; i++){
@@ -270,9 +262,11 @@ int main(int argc, char *argv[]) {
       pthread_create(&(threads[i]->thread_handle), NULL, mine, threads[i]);
     }
     // check if threads were made correctly
-    //print_out_thread_info(threads, num_threads);
+    for(i = 0; i < num_threads; i++){
+      printf("thread id: %d\n", threads[i]->thread_id);
+    }
 
-    /** Example of how to create a single thread */
+    /* Example of how to create a single thread */
     // struct thread_info *thread = calloc(1, sizeof(struct thread_info));
     // thread->thread_id = 0;
     // pthread_create(&thread->thread_handle, NULL, mine, thread);
@@ -281,12 +275,12 @@ int main(int argc, char *argv[]) {
 
     uint64_t current_nonce = 0;
     while (current_nonce < UINT64_MAX) {
-        /* Let's create a new array to store the nonces. We will malloc enough
-         * space to store NONCES_PER_TASK worth of nonces */
+        /* creates a new array of nonces/tasks */
+        //gets freed in mine() which allows for work to be prepared and staged while mining
         uint64_t *nonces = malloc(sizeof(uint64_t) * NONCES_PER_TASK);
         int i;
         for (i = 0; i < NONCES_PER_TASK; ++i) {
-            nonces[i] = current_nonce++;
+            nonces[i] = current_nonce++; //initializes nonces and increments current_nonce after
 
             if (current_nonce % 1000000 == 0) {
                 /* Print out '.' to show progress every 1m hashes: */
@@ -301,12 +295,21 @@ int main(int argc, char *argv[]) {
         while (task_pointer != NULL && solution_found == false) {
             /* When task_pointer is not NULL, the task has not been picked up by
              * a consumer yet. We will wait until a consumer is ready. */
+
+             // simply waiting for the work to be consumed before creating more
+             // efficiently could make more work, but won't assign to task_pointer until
+             // notified the previous work was consumed
+
             // TODO we are just busy waiting here. In your multi-threaded
             // version of the program, you should wait on a condition variable.
+
             //pthread_cond_wait(&task_staging, &task_mutex);
+
+            // should be notified when the task_pointer is null
         }
 
         if (solution_found == true) {
+          // stop creating work
             break;
         }
 
@@ -320,7 +323,7 @@ int main(int argc, char *argv[]) {
         /* We are done with the mutex; we don't need to hold it while we
          * generate the next task. */
         pthread_mutex_unlock(&task_mutex);
-    }
+    } //while current_nonce < UINT64_MAX
 
     printf("\n");
 
@@ -330,12 +333,11 @@ int main(int argc, char *argv[]) {
     pthread_cond_broadcast(&task_ready);
     pthread_mutex_unlock(&task_mutex);
 
-    //double end_time = get_time();
+    double end_time = get_time();
 
     /** Tell all of the threads to stop */
-    for(i = 0; i < num_threads; i++){
+    for(i = 0; i < num_threads; i++)
       pthread_join(threads[i]->thread_handle, NULL);
-    }
 
     print_results(threads, num_threads, end_time - start_time);
 
