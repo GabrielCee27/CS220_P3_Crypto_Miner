@@ -186,6 +186,23 @@ void print_out_thread_info(struct thread_info **threads, int num_threads){
   }
 }
 
+void print_results(struct thread_info **threads, int num_threads, double total_time){
+  uint64_t total_inversions = 0;
+
+  int i;
+  for(i = 0; i < num_threads; i++){
+    if(strlen(threads[i]->solution_hash) > 0){
+      printf("Solution found by thread %d:\n", threads[i]->thread_id);
+      printf("Nonce: %llu\n", threads[i]->nonce);
+      printf("Hash: %s\n", threads[i]->solution_hash);
+    }
+    total_inversions += threads[i]->num_inversions;
+  }
+
+  printf("%llu hashes in %.2fs (%.2f hashes/sec)\n",
+          total_inversions, total_time, total_inversions / total_time);
+}
+
 int main(int argc, char *argv[]) {
 
     if (argc != 4) {
@@ -313,38 +330,14 @@ int main(int argc, char *argv[]) {
     pthread_cond_broadcast(&task_ready);
     pthread_mutex_unlock(&task_mutex);
 
-    double end_time = get_time();
-    uint64_t total_inversions = 0;
-
-    // TODO we should join on all the threads here and add up the total number
-    // of hashes computed.
-    //** Example of how to call join on one thread */
-    //pthread_join(thread->thread_handle, NULL);
+    //double end_time = get_time();
 
     /** Tell all of the threads to stop */
     for(i = 0; i < num_threads; i++){
       pthread_join(threads[i]->thread_handle, NULL);
     }
 
-    // if (strlen(thread->solution_hash) > 0) {
-    //     printf("Solution found by thread %d:\n", thread->thread_id);
-    //     printf("Nonce: %llu\n", thread->nonce);
-    //     printf("Hash: %s\n", thread->solution_hash);
-    // }
-    // total_inversions += thread->num_inversions;
-
-    for(i = 0; i < num_threads; i++){
-      if(strlen(threads[i]->solution_hash) > 0){
-        printf("Solution found by thread %d:\n", threads[i]->thread_id);
-        printf("Nonce: %llu\n", threads[i]->nonce);
-        printf("Hash: %s\n", threads[i]->solution_hash);
-      }
-      total_inversions += threads[i]->num_inversions;
-    }
-
-    double total_time = end_time - start_time;
-    printf("%llu hashes in %.2fs (%.2f hashes/sec)\n",
-            total_inversions, total_time, total_inversions / total_time);
+    print_results(threads, num_threads, end_time - start_time);
 
     return 0;
 }
