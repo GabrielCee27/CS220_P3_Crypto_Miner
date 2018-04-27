@@ -193,6 +193,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    //TESTING
+    printf("This version only supports 1 thread\n");
+
     // TODO we have hard coded the difficulty to 20 bits (0x0000FFF). This is a
     // fairly quick computation -- something like 28 will take much longer.  You
     // should allow the user to specify anywhere between 1 and 32 bits of zeros.
@@ -215,7 +218,7 @@ int main(int argc, char *argv[]) {
      * of bitcoin transactions. */
     bitcoin_block_data = argv[3];
 
-    // Check to make sure the user entered a valid (non-empty) string
+    /** Check to make sure the user entered a valid (non-empty) string */
     if(strcmp(bitcoin_block_data, "") == 0){
       printf("ERROR: The string passed as the block data is empty.\n");
       return 1; //Exit with error code
@@ -228,19 +231,20 @@ int main(int argc, char *argv[]) {
     // pthread_t handle that we will use later to join the threads. Each struct
     // is passed in as the thread routine's argument.
 
+    //Testing with one thread
     unsigned int num_threads = 1;
-    if(atoi(argv[1]) < 1){
-      printf("ERROR: Invalid number of threads, defaulting to 5\n");
-      num_threads = 5; //TODO: Move to initial value when implemented multithreading
-    }
-    else{
-      num_threads = atoi(argv[1]);
-    }
+
+    //** Final version */
+    // unsigned int num_threads = 5;
+    // if(atoi(argv[1]) < 1){
+    //   printf("ERROR: Invalid number of threads, defaulting to 5\n");
+    // }
+    // else{
+    //   num_threads = atoi(argv[1]);
+    // }
     printf("Number of threads: %d\n", num_threads);
 
-    //TODO: create the number of threads specified and store them in an array.
-
-    // thread of pointers to the type thread_info
+    //** Array of thread pointers */
     struct thread_info *threads[num_threads];
     int i;
     for(i = 0; i < num_threads; i++){
@@ -248,18 +252,16 @@ int main(int argc, char *argv[]) {
       threads[i]->thread_id = i;
       pthread_create(&(threads[i]->thread_handle), NULL, mine, threads[i]);
     }
-
     // check if threads were made correctly
     //print_out_thread_info(threads, num_threads);
 
-
-    return 0;
-
-    struct thread_info *thread = calloc(1, sizeof(struct thread_info));
-    thread->thread_id = 0;
-    pthread_create(&thread->thread_handle, NULL, mine, thread);
+    /** Example of how to create a single thread */
+    // struct thread_info *thread = calloc(1, sizeof(struct thread_info));
+    // thread->thread_id = 0;
+    // pthread_create(&thread->thread_handle, NULL, mine, thread);
 
     double start_time = get_time();
+
     uint64_t current_nonce = 0;
     while (current_nonce < UINT64_MAX) {
         /* Let's create a new array to store the nonces. We will malloc enough
@@ -313,15 +315,32 @@ int main(int argc, char *argv[]) {
 
     double end_time = get_time();
     uint64_t total_inversions = 0;
+
     // TODO we should join on all the threads here and add up the total number
     // of hashes computed.
-    pthread_join(thread->thread_handle, NULL);
-    if (strlen(thread->solution_hash) > 0) {
-        printf("Solution found by thread %d:\n", thread->thread_id);
-        printf("Nonce: %llu\n", thread->nonce);
-        printf("Hash: %s\n", thread->solution_hash);
+    //** Example of how to call join on one thread */
+    //pthread_join(thread->thread_handle, NULL);
+
+    /** Tell all of the threads to stop */
+    for(i = 0; i < num_threads; i++){
+      pthread_join(threads[i]->thread_handle, NULL);
     }
-    total_inversions += thread->num_inversions;
+
+    // if (strlen(thread->solution_hash) > 0) {
+    //     printf("Solution found by thread %d:\n", thread->thread_id);
+    //     printf("Nonce: %llu\n", thread->nonce);
+    //     printf("Hash: %s\n", thread->solution_hash);
+    // }
+    // total_inversions += thread->num_inversions;
+
+    for(i = 0; i < num_threads; i++){
+      if(strlen(threads[i]->solution_hash) > 0){
+        printf("Solution found by thread %d:\n", threads[i]->thread_id);
+        printf("Nonce: %llu\n", threads[i]->nonce);
+        printf("Hash: %s\n", threads[i]->solution_hash);
+      }
+      total_inversions += threads[i]->num_inversions;
+    }
 
     double total_time = end_time - start_time;
     printf("%llu hashes in %.2fs (%.2f hashes/sec)\n",
