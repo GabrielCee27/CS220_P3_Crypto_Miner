@@ -34,10 +34,7 @@
 
 #include "sha1.c"
 
-// TODO ten nonces per task is fairly low. There is probably also a point where
-// increasing it too much will reduce performance. You will need to experiment
-// to find the optimal value.
-#define NONCES_PER_TASK 10
+#define NONCES_PER_TASK 120
 
 pthread_mutex_t task_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t task_staging = PTHREAD_COND_INITIALIZER;
