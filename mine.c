@@ -23,19 +23,6 @@
  * 1016000 hashes in 0.26s (3960056.52 hashes/sec)
  */
 
-
-// 1. Program starts, block data is provided by the user: Hello CS 220!!!
-// 2. Each thread receives a task to work on.
-//      A task is simply an array of nonces.
-// 3. Each thread begins appending each nonce in the task array to the block data and then hashing the resulting string.
-//      For example, the first combination will be Hello CS 220!!!0, followed by Hello CS 220!!!1, and so on.
-//      Once a thread finds a hash that begins with the correct amount of zeros (specified by the difficulty mask), the process is complete.
-// 4. Once a thread finds a hash that begins with the correct amount of zeros (specified by the difficulty mask), the process is complete.
-
-// main thread should be producing tasks while the worker threads performs the hash inversions
-// If the user specifies 4 for the thread count, this means you’ll have five total threads (main thread + 4 workers)
-
-
 #include <limits.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -123,20 +110,29 @@ void *mine(void *arg) {
     /* We'll keep on working until a solution for our bitcoin block is found */
     while (true) {
 
-        while (task_pointer == NULL && solution_found == false) {
-            /* We will busy wait here until task_pointer is not NULL. */
-        }
+      pthread_mutex_lock(&task_mutex);
+      while (task_pointer == NULL && solution_found == false) {
+        printf("thread %d is waiting for consumer\n", info->thread_id);
+        pthread_cond_wait(&task_ready, &task_mutex);
+      }
 
         if (solution_found) {
+          printf("Thread %d sees that a solution has been found\n", info->thread_id);
+          pthread_cond_signal(&task_staging);
+          pthread_mutex_unlock(&task_mutex);
             /* Another thread has found the solution. This thread can exit. */
             return NULL;
         }
 
+        /* Copy over task */
         task_nonces = task_pointer;
 
-        /* We have the task. Empty out our task_pointer so another thread can
-         * receive a task. */
+        /* Empty out our task_pointer so another thread can receive a task. */
         task_pointer = NULL;
+
+        /* let main know to stage a new task */
+        pthread_cond_signal(&task_staging);
+        pthread_mutex_unlock(&task_mutex);
 
         int i;
         for (i = 0; i < NONCES_PER_TASK; ++i) {
@@ -171,9 +167,15 @@ void *mine(void *arg) {
              * bitwise AND operation and check to see if we get the same result
              * back. */
             if ((hash_front & difficulty_mask) == hash_front) {
+
+              printf("SOLUTION FOUND BY THREAD %d!!!!!\n", info->thread_id);
                 solution_found = true;
                 info->nonce = task_nonces[i];
                 sha1tostring(info->solution_hash, digest);
+
+                /* To wake up main from waiting */
+                pthread_cond_signal(&task_staging);
+
                 return NULL;
             }
         }
@@ -241,16 +243,16 @@ int main(int argc, char *argv[]) {
     // is passed in as the thread routine's argument.
 
     //Testing with one thread
-    unsigned int num_threads = 1;
+    //unsigned int num_threads = 1;
 
     //** Final version */
-    // unsigned int num_threads = 5;
-    // if(atoi(argv[1]) < 1){
-    //   printf("ERROR: Invalid number of threads, defaulting to 5\n");
-    // }
-    // else{
-    //   num_threads = atoi(argv[1]);
-    // }
+    unsigned int num_threads = 5;
+    if(atoi(argv[1]) < 1){
+      printf("ERROR: Invalid number of threads, defaulting to 5\n");
+    }
+    else{
+      num_threads = atoi(argv[1]);
+    }
     printf("Number of threads: %d\n", num_threads);
 
     /* Array of thread pointers */
@@ -262,14 +264,9 @@ int main(int argc, char *argv[]) {
       pthread_create(&(threads[i]->thread_handle), NULL, mine, threads[i]);
     }
     // check if threads were made correctly
-    for(i = 0; i < num_threads; i++){
-      printf("thread id: %d\n", threads[i]->thread_id);
-    }
-
-    /* Example of how to create a single thread */
-    // struct thread_info *thread = calloc(1, sizeof(struct thread_info));
-    // thread->thread_id = 0;
-    // pthread_create(&thread->thread_handle, NULL, mine, thread);
+    // for(i = 0; i < num_threads; i++){
+    //   printf("thread id: %d\n", threads[i]->thread_id);
+    // }
 
     double start_time = get_time();
 
@@ -291,30 +288,25 @@ int main(int argc, char *argv[]) {
 
         /* Nonces are ready to be consumed. We will wait for a consumer thread
          * to pick up the job. */
+         printf("Main waiting on lock\n");
         pthread_mutex_lock(&task_mutex);
+        printf("Main got lock\n");
         while (task_pointer != NULL && solution_found == false) {
             /* When task_pointer is not NULL, the task has not been picked up by
              * a consumer yet. We will wait until a consumer is ready. */
-
              // simply waiting for the work to be consumed before creating more
-             // efficiently could make more work, but won't assign to task_pointer until
-             // notified the previous work was consumed
 
-            // TODO we are just busy waiting here. In your multi-threaded
-            // version of the program, you should wait on a condition variable.
-
-            //pthread_cond_wait(&task_staging, &task_mutex);
-
-            // should be notified when the task_pointer is null
+            printf("main thread waiting for the tasks to be consumed\n");
+            pthread_cond_wait(&task_staging, &task_mutex);
+            printf("main thread out of wait\n");
         }
 
-        if (solution_found == true) {
-          // stop creating work
+        if (solution_found == true)
             break;
-        }
 
+        printf("main thread assigning new nonces to task_pointer\n");
         /* We have acquired a mutex on task_mutex. We can now update the pointer
-         * to point to the task we just generated */
+         * to point to the new task we just generated */
         task_pointer = nonces;
 
         /* Tell the consumer a new task is ready */
@@ -327,10 +319,15 @@ int main(int argc, char *argv[]) {
 
     printf("\n");
 
+    printf("Main out of while loop.\n");
+
     /* If we reach this point, one of the threads found a solution. We will
-     * signal any waiting worker threads so they will wake up and see that we
-     * are done. */
+     * signal any waiting worker threads so they will wake up and see
+     * that solution_found is true */
     pthread_cond_broadcast(&task_ready);
+
+    /* Since the loop will break before unlocking the task_mutex
+     * we have to call it here */
     pthread_mutex_unlock(&task_mutex);
 
     double end_time = get_time();
