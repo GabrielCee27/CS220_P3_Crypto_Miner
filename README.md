@@ -42,6 +42,7 @@ Experiment with different values for `NONCES_PER_TASK`. What value yields the be
 
 When evaluating parallel programs, we use speedup and efficiency. Why are these metrics not as useful when measuring the performance of our parallel crytocurrency miner?
 
+With parallel programs, the speedup and efficiency is effected due to how much the workload is split up. However, with threads that is not the case. In the case of the cytocurrency miner, the more threads leads to more consumers which leads to the producer able to produce work at a faster pace until hitting a point of diminishing returns.
 
 ### Performance II
 
