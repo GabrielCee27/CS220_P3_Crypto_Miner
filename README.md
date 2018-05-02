@@ -16,7 +16,7 @@ Report for the original program as well as modified version:
 2. Hashes per second
 3. CPU usage during execution (use the `top` command to get a rough estimate of the average CPU usage)
 
-Argument: 
+Argument: ./mine 1 24 'Hello CS 220!!!'
 
 Condition Variables:
 
