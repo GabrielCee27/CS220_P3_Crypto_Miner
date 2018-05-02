@@ -12,10 +12,6 @@ Once you have condition variables working in your program, compare the performan
 
 Report for the original program as well as modified version:
 
-1. Total program run time
-2. Hashes per second
-3. CPU usage during execution (use the `top` command to get a rough estimate of the average CPU usage)
-
 Argument: ./mine 1 24 'Hello CS 220!!!'
 
 Condition Variables:
@@ -31,6 +27,8 @@ Busy Waiting:
 3. CPU usage: 199.7%
 
 Which version performs better? Is this the result you expected? Why or why not?
+
+In terms of speed, the busy waiting version performed better. I expected that to be the case due to the fact that busy waiting moves at a faster pace than conditional variables since conditional variables requires more communication. However, in terms of CPU usage conditional variables performed better than busy waiting. Again, I expected this to be the case since busy waiting inefficiently uses CPU to loop while waiting to continue as opposed to conditional variables where minimal CPU is used to wait to move on. 
 
 ### Nonces Per Task
 
