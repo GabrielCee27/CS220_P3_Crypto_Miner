@@ -22,13 +22,13 @@ Condition Variables:
 
 1. Total run time: 1.85s
 2. Hashes per second: 547563.49
-3. CPU usage:
+3. CPU usage: 112.8%
 
 Busy Waiting:
 
-1. Total run time:
-2. Hashes per second:
-3. CPU usage:
+1. Total run time: 1.75s
+2. Hashes per second: 576781.53
+3. CPU usage: 199.7%
 
 Which version performs better? Is this the result you expected? Why or why not?
 
