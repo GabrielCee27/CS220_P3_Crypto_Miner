@@ -16,17 +16,31 @@ Report for the original program as well as modified version:
 2. Hashes per second
 3. CPU usage during execution (use the `top` command to get a rough estimate of the average CPU usage)
 
+Condition Variables:
+
+1. Total run time: 1.85s
+2. Hashes per second: 547563.49
+3. CPU usage:
+
+Busy Waiting:
+
+1. Total run time:
+2. Hashes per second:
+3. CPU usage:
+
 Which version performs better? Is this the result you expected? Why or why not?
 
 ### Nonces Per Task
 
 Experiment with different values for `NONCES_PER_TASK`. What value yields the best performance in terms of hashes per second on your machine?
 
+120 seems to be the best NONCES_PER_TASK for the best results.
+
 ### Performance I
 
 When evaluating parallel programs, we use speedup and efficiency. Why are these metrics not as useful when measuring the performance of our parallel crytocurrency miner?
 
+
 ### Performance II
 
 Using any of the `kudlick` machines (in our 220 classroom), what is the highest performance you were able to achieve in terms of hashes per second? What configuration did you use (`NONCES_PER_TASK`, number of threads, block data, compiler options)?
-
