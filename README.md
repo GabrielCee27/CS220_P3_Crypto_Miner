@@ -46,3 +46,10 @@ When evaluating parallel programs, we use speedup and efficiency. Why are these 
 ### Performance II
 
 Using any of the `kudlick` machines (in our 220 classroom), what is the highest performance you were able to achieve in terms of hashes per second? What configuration did you use (`NONCES_PER_TASK`, number of threads, block data, compiler options)?
+
+Highest Performance:
+
+NONCES_PER_TASK:
+Number of threads:
+Block data:
+Compiler options: 
