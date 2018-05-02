@@ -28,7 +28,9 @@ Busy Waiting:
 
 Which version performs better? Is this the result you expected? Why or why not?
 
-In terms of speed, the busy waiting version performed better. I expected that to be the case due to the fact that busy waiting moves at a faster pace than conditional variables since conditional variables requires more communication. However, in terms of CPU usage conditional variables performed better than busy waiting. Again, I expected this to be the case since busy waiting inefficiently uses CPU to loop while waiting to continue as opposed to conditional variables where minimal CPU is used to wait to move on. 
+In terms of speed, the busy waiting version performed better. I expected that to be the case due to the fact that busy waiting moves at a faster pace than condition variables since condition variables requires more communication. However, in terms of CPU usage conditional variables performed better than busy waiting. Again, I expected this to be the case since busy waiting inefficiently uses CPU to loop while waiting to continue as opposed to condition variables where minimal CPU is used to wait to move on. 
+
+If the problem were to scale up and a great number of threads are used, it is obvious why condition variables is the safer way to go.
 
 ### Nonces Per Task
 
