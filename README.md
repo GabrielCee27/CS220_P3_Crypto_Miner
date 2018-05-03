@@ -50,7 +50,7 @@ Using any of the `kudlick` machines (in our 220 classroom), what is the highest 
 
 Highest Performance:
 
-NONCES_PER_TASK:
+NONCES_PER_TASK: 120
 Number of threads:
 Block data:
 Compiler options: 
