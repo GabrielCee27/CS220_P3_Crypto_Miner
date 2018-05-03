@@ -49,6 +49,6 @@ With parallel programs, the speedup and efficiency is effected due to how much t
 Using any of the `kudlick` machines (in our 220 classroom), what is the highest performance you were able to achieve in terms of hashes per second? What configuration did you use (`NONCES_PER_TASK`, number of threads, block data, compiler options)?
 
 * NONCES_PER_TASK: 120
-* Number of threads:
-* Block data:
-* Compiler options: 
+* Number of threads: 5
+* Block data: 'Hello CS 220!!!'
+* Compiler options: -O3
